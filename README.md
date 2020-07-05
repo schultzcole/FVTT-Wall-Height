@@ -1,6 +1,6 @@
-# FVTT Module Template Repo
+# Wall Height
 
-A template repository for easy creation of new modules.
+Adds the ability to set wall height for walls so that tokens can look over them.
 
 ## License
 
