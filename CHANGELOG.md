@@ -1,15 +1,7 @@
 # CHANGELOG
 
-## [VERSION] ISO DATE
+## [0.1.0] 2020-07-05
 
 ### ADDED
 
-### REMOVED
-
-### CHANGED
-
-### FIXED
-
-### DEPRECATED
-
-### SECURITY
+- Add top and bottom height for walls.
