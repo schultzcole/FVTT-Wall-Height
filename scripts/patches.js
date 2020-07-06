@@ -1,11 +1,6 @@
-Hooks.on("init", () => {
-    patchToken_onUpdate();
-    patchSightLayer_updateToken();
-    patchSightLayer_computeSight();
-    patchWallsLayer_getWallCollisionsForRay();
-});
+import { MODULE_SCOPE, TOP_KEY, BOTTOM_KEY } from "./const.js";
 
-function patchToken_onUpdate() {
+export function Token_onUpdate() {
     Token.prototype._onUpdate = function(data, options) {
         // Copied from Token#_onUpdate. Foundry version 0.6.4, foundry.js:38152
 
@@ -25,7 +20,7 @@ function patchToken_onUpdate() {
         const perspectiveChange = changed.has("rotation") && this.hasLimitedVisionAngle;
         const visionChange = ["brightLight", "brightSight", "dimLight", "dimSight", "lightAlpha", "lightAngle",
           "lightColor", "sightAngle", "vision"].some(k => changed.has(k));
-        /// CHANGE HERE
+/// CHANGE HERE
         const elevationChange = changed.has("elevation");
 
     
@@ -53,10 +48,9 @@ function patchToken_onUpdate() {
         }
     
         // Process perspective changes
-        /// CHANGE HERE
+/// CHANGE HERE
         const updatePerspective = (visibilityChange || positionChange || perspectiveChange || visionChange || elevationChange) &&
           (this.data.vision || changed.has("vision") || this.emitsLight);
-          console.log(`Token#onUpdate, updatePerspective: ${updatePerspective}`)
         if ( updatePerspective ) {
           canvas.sight.updateToken(this, {defer: true});
           canvas.addPendingOperation("SightLayer.update", canvas.sight.update, canvas.sight);
@@ -76,7 +70,7 @@ function patchToken_onUpdate() {
       }
 }
 
-function patchSightLayer_updateToken() {
+export function SightLayer_updateToken() {
     SightLayer.prototype.updateToken = function(token, {defer=false, deleted=false, walls=null, forceUpdateFog=false}={}) {
         // Copied from SightLayer#updateToken. Foundry version 0.6.4, foundry.js:32366
 
@@ -122,7 +116,7 @@ function patchSightLayer_updateToken() {
             density: 6,
             rotation: token.data.rotation,
             walls: walls,
-            /// CHANGE HERE
+/// CHANGE HERE
             elevation: token.data.elevation
           });
     
@@ -178,7 +172,7 @@ function patchSightLayer_updateToken() {
       }
 }
 
-function patchSightLayer_computeSight() {
+export function SightLayer_computeSight() {
     SightLayer.computeSight = function(origin, radius, {minAngle=null, maxAngle=null, cullMin=10, cullMult=2, cullMax=20,
         density=6, walls, rotation=0, elevation=0, angle=360}={}) {
         // Copied from SightLayer#computeSight. Foundry version 0.6.4, foundry.js:32815
@@ -210,7 +204,7 @@ function patchSightLayer_computeSight() {
           }
     
           // Normal case: identify the closest collision point both unrestricted (LOS) and restricted (FOV)
-          /// CHANGE HERE
+/// CHANGE HERE
           let collision = WallsLayer.getWallCollisionsForRay(r, walls, {mode: "closest", elevation});
           r.unrestricted = collision || { x: r.B.x, y: r.B.y, t0: 1, t1: 0};
           r.limited = ( r.unrestricted.t0 <= limit ) ? r.unrestricted : r.project(limit);
@@ -230,11 +224,17 @@ function patchSightLayer_computeSight() {
       }
 }
 
-function patchWallsLayer_getWallCollisionsForRay() {
+export function WallsLayer_getWallCollisionsForRay() {
     const oldGetWallCollisionsForRay = WallsLayer.getWallCollisionsForRay;
     WallsLayer.getWallCollisionsForRay = function (ray, walls, {mode="all", elevation=0}={}) {
         // cull walls below elevation
-        const newWalls = walls.filter(w => elevation < 15);
+        const newWalls = walls.filter(w => {
+            let wallHeightTop = w.getFlag(MODULE_SCOPE, TOP_KEY);
+            if (wallHeightTop === null || wallHeightTop === undefined) wallHeightTop = Infinity;
+            let wallHeightBottom = w.getFlag(MODULE_SCOPE, BOTTOM_KEY);
+            if (wallHeightBottom === null || wallHeightBottom === undefined) wallHeightBottom = -Infinity;
+            return elevation >= wallHeightBottom && elevation < wallHeightTop;
+        });
         return oldGetWallCollisionsForRay.call(this, ray, newWalls, {mode});
     }
 }
