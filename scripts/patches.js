@@ -1,4 +1,5 @@
 import { MODULE_SCOPE, TOP_KEY, BOTTOM_KEY } from "./const.js";
+import { getWallBounds } from "./utils.js";
 
 export function Token_onUpdate() {
     Token.prototype._onUpdate = function(data, options) {
@@ -193,6 +194,7 @@ export function SightLayer_computeSight() {
         // Cast sight rays needed to determine the polygons
         let rays = this._castSightRays(x, y, distance, cullDistance, density, limitAngle, aMin, aMax);
     
+        const start = performance.now();
         // Iterate over rays and record their points of collision with blocking walls
         walls = walls || canvas.walls.blockVision;
         for ( let r of rays ) {
@@ -206,9 +208,12 @@ export function SightLayer_computeSight() {
           // Normal case: identify the closest collision point both unrestricted (LOS) and restricted (FOV)
 /// CHANGE HERE
           let collision = WallsLayer.getWallCollisionsForRay(r, walls, {mode: "closest", elevation});
+
           r.unrestricted = collision || { x: r.B.x, y: r.B.y, t0: 1, t1: 0};
           r.limited = ( r.unrestricted.t0 <= limit ) ? r.unrestricted : r.project(limit);
         }
+        const end = performance.now();
+        console.log(`total time calculating collisions for all rays: ${end-start}`);
     
         // Reduce collisions and limits to line-of-sight and field-of-view polygons
         let [losPoints, fovPoints] = rays.reduce((acc, r) => {
@@ -225,16 +230,12 @@ export function SightLayer_computeSight() {
 }
 
 export function WallsLayer_getWallCollisionsForRay() {
-    const oldGetWallCollisionsForRay = WallsLayer.getWallCollisionsForRay;
-    WallsLayer.getWallCollisionsForRay = function (ray, walls, {mode="all", elevation=0}={}) {
-        // cull walls below elevation
-        const newWalls = walls.filter(w => {
-            let wallHeightTop = w.getFlag(MODULE_SCOPE, TOP_KEY);
-            if (wallHeightTop === null || wallHeightTop === undefined) wallHeightTop = Infinity;
-            let wallHeightBottom = w.getFlag(MODULE_SCOPE, BOTTOM_KEY);
-            if (wallHeightBottom === null || wallHeightBottom === undefined) wallHeightBottom = -Infinity;
-            return elevation >= wallHeightBottom && elevation < wallHeightTop;
-        });
-        return oldGetWallCollisionsForRay.call(this, ray, newWalls, {mode});
-    }
+  const oldGetWallCollisionsForRay = WallsLayer.getWallCollisionsForRay;
+  WallsLayer.getWallCollisionsForRay = function(ray, walls, {mode="all", elevation=0}={}) {
+    const newWalls = walls.filter(w => {
+      const { wallHeightTop, wallHeightBottom } = getWallBounds(w);
+      return elevation >= wallHeightBottom && elevation < wallHeightTop;
+    })
+    return oldGetWallCollisionsForRay.call(this, ray, newWalls, {mode});
+  }
 }
