@@ -1,5 +1,6 @@
 import { Token_onUpdate, SightLayer_updateToken, SightLayer_computeSight, WallsLayer_getWallCollisionsForRay } from "./patches.js";
 import { MODULE_SCOPE, TOP_KEY, BOTTOM_KEY } from "./const.js";
+import { getWallBounds } from "./utils.js";
 
 Hooks.on("init", () => {
     Token_onUpdate();
@@ -9,10 +10,7 @@ Hooks.on("init", () => {
 });
 
 Hooks.on("renderWallConfig", (app, html, data) => {
-    let wallHeightTop = app.object.getFlag(MODULE_SCOPE, TOP_KEY);
-    if (wallHeightTop === null || wallHeightTop === undefined) wallHeightTop = Infinity;
-    let wallHeightBottom = app.object.getFlag(MODULE_SCOPE, BOTTOM_KEY);
-    if (wallHeightBottom === null || wallHeightBottom === undefined) wallHeightBottom = -Infinity;
+    const { wallHeightTop, wallHeightBottom } = getWallBounds(app.object);
     html.height("325px");
     html.find("form button").before(`
         <div class="form-group">

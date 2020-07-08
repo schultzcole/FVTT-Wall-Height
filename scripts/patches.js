@@ -1,4 +1,5 @@
 import { MODULE_SCOPE, TOP_KEY, BOTTOM_KEY } from "./const.js";
+import { getWallBounds } from "./utils.js";
 
 export function Token_onUpdate() {
     Token.prototype._onUpdate = function(data, options) {
@@ -193,6 +194,7 @@ export function SightLayer_computeSight() {
         // Cast sight rays needed to determine the polygons
         let rays = this._castSightRays(x, y, distance, cullDistance, density, limitAngle, aMin, aMax);
     
+        const start = performance.now();
         // Iterate over rays and record their points of collision with blocking walls
         walls = walls || canvas.walls.blockVision;
         for ( let r of rays ) {
@@ -206,9 +208,12 @@ export function SightLayer_computeSight() {
           // Normal case: identify the closest collision point both unrestricted (LOS) and restricted (FOV)
 /// CHANGE HERE
           let collision = WallsLayer.getWallCollisionsForRay(r, walls, {mode: "closest", elevation});
+
           r.unrestricted = collision || { x: r.B.x, y: r.B.y, t0: 1, t1: 0};
           r.limited = ( r.unrestricted.t0 <= limit ) ? r.unrestricted : r.project(limit);
         }
+        const end = performance.now();
+        console.log(`total time calculating collisions for all rays: ${end-start}`);
     
         // Reduce collisions and limits to line-of-sight and field-of-view polygons
         let [losPoints, fovPoints] = rays.reduce((acc, r) => {
@@ -225,16 +230,63 @@ export function SightLayer_computeSight() {
 }
 
 export function WallsLayer_getWallCollisionsForRay() {
-    const oldGetWallCollisionsForRay = WallsLayer.getWallCollisionsForRay;
-    WallsLayer.getWallCollisionsForRay = function (ray, walls, {mode="all", elevation=0}={}) {
-        // cull walls below elevation
-        const newWalls = walls.filter(w => {
-            let wallHeightTop = w.getFlag(MODULE_SCOPE, TOP_KEY);
-            if (wallHeightTop === null || wallHeightTop === undefined) wallHeightTop = Infinity;
-            let wallHeightBottom = w.getFlag(MODULE_SCOPE, BOTTOM_KEY);
-            if (wallHeightBottom === null || wallHeightBottom === undefined) wallHeightBottom = -Infinity;
-            return elevation >= wallHeightBottom && elevation < wallHeightTop;
-        });
-        return oldGetWallCollisionsForRay.call(this, ray, newWalls, {mode});
+  WallsLayer.getWallCollisionsForRay = function(ray, walls, {mode="all", elevation=0}={}) {
+    // Copied from WallsLayer.getWallCollisionsForRay. Foundry version 0.6.4, foundry.js:34155
+
+    // Establish initial data
+    const collisions = {};
+    const isAny = mode === "any";
+    const bounds = [ray.angle - (Math.PI/2), ray.angle + (Math.PI/2)];
+
+    // const preLoop = performance.now();
+    // let cumulativeDelta = 0;
+
+    // Iterate over provided walls
+    for (let w of walls) {
+
+      // Skip open doors
+      if ( (w.data.door > WALL_DOOR_TYPES.NONE) && (w.data.ds === WALL_DOOR_STATES.OPEN ) ) continue;
+
+      // Skip directional walls where the ray angle is not in the same hemisphere as the wall direction
+      if ( w.direction !== null ) {
+        if ( !w.isDirectionBetweenAngles(...bounds) ) continue;
+      }
+
+      // const start = performance.now();
+      const { wallHeightTop, wallHeightBottom } = getWallBounds(w);
+      // const end = performance.now();
+      // cumulativeDelta += end-start;
+
+      if (elevation < wallHeightBottom || elevation >= wallHeightTop) continue;
+
+      // Test for intersections
+      let i = ray.intersectSegment(w.coords);
+      if ( i && i.t0 > 0 ) {
+        if ( isAny ) return true;
+        i.x = Math.round(i.x);
+        i.y = Math.round(i.y);
+
+        // Ensure uniqueness of the collision point
+        let pt = `${i.x}.${i.y}`;
+        const c = collisions[pt];
+        if ( c ) {
+          c.sense = Math.min(w.data.sense, c.sense);
+        }
+        else {
+          i.sense = w.data.sense;
+          collisions[pt] = i;
+        }
+      }
     }
+
+    // const postLoop = performance.now();
+
+    // console.log(`total time in walls loop: ${postLoop - preLoop}`);
+    // console.log(`wall height time in walls loop: ${cumulativeDelta}`);
+
+    // Return results
+    if ( isAny ) return false;
+    if ( mode === "closest" ) return this._getClosestCollisionPoint(ray, Object.values(collisions));
+    return Object.values(collisions);
+  }
 }
