@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [1.0.1] 2020-07-12
+
+### FIXED
+
+- Fixed an issue where the light emission of a token was always considered to be at height zero. This resulted in a confusing user experience where a token could only see through a wall when the minimum height was greater than 0.
+
 ## [1.0.0] 2020-07-07
 
 The 1.0.0 update introduces a breaking change. Walls that have been set up with wall height will need to be set up again. [A macro](/macros/0.1.0_to_1.0.0_migration.js) is provided that can perform the migration automatically.
