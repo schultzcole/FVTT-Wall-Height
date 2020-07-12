@@ -150,7 +150,9 @@ export function SightLayer_updateToken() {
             cullMax: cullMax,
             density: 6,
             rotation: token.data.rotation,
-            walls: walls
+            walls: walls,
+/// CHANGE HERE
+            elevation: token.data.elevation
           });
     
           // Add a light source
@@ -175,7 +177,7 @@ export function SightLayer_updateToken() {
 
 export function SightLayer_computeSight() {
     SightLayer.computeSight = function(origin, radius, {minAngle=null, maxAngle=null, cullMin=10, cullMult=2, cullMax=20,
-        density=6, walls, rotation=0, elevation=0, angle=360}={}) {
+        density=6, walls, rotation=0, elevation=null, angle=360}={}) {
         // Copied from SightLayer#computeSight. Foundry version 0.6.4, foundry.js:32815
     
         // Get the maximum sight distance and the limiting radius
@@ -194,7 +196,6 @@ export function SightLayer_computeSight() {
         // Cast sight rays needed to determine the polygons
         let rays = this._castSightRays(x, y, distance, cullDistance, density, limitAngle, aMin, aMax);
     
-        const start = performance.now();
         // Iterate over rays and record their points of collision with blocking walls
         walls = walls || canvas.walls.blockVision;
         for ( let r of rays ) {
@@ -212,8 +213,6 @@ export function SightLayer_computeSight() {
           r.unrestricted = collision || { x: r.B.x, y: r.B.y, t0: 1, t1: 0};
           r.limited = ( r.unrestricted.t0 <= limit ) ? r.unrestricted : r.project(limit);
         }
-        const end = performance.now();
-        console.log(`total time calculating collisions for all rays: ${end-start}`);
     
         // Reduce collisions and limits to line-of-sight and field-of-view polygons
         let [losPoints, fovPoints] = rays.reduce((acc, r) => {
@@ -231,11 +230,14 @@ export function SightLayer_computeSight() {
 
 export function WallsLayer_getWallCollisionsForRay() {
   const oldGetWallCollisionsForRay = WallsLayer.getWallCollisionsForRay;
-  WallsLayer.getWallCollisionsForRay = function(ray, walls, {mode="all", elevation=0}={}) {
-    const newWalls = walls.filter(w => {
-      const { wallHeightTop, wallHeightBottom } = getWallBounds(w);
-      return elevation >= wallHeightBottom && elevation < wallHeightTop;
-    })
-    return oldGetWallCollisionsForRay.call(this, ray, newWalls, {mode});
+  WallsLayer.getWallCollisionsForRay = function(ray, walls, {mode="all", elevation=null}={}) {
+    let filteredWalls = walls;
+    if (elevation != null) {
+      filteredWalls = walls.filter(w => {
+        const { wallHeightTop, wallHeightBottom } = getWallBounds(w);
+        return elevation >= wallHeightBottom && elevation < wallHeightTop;
+      })
+    }
+    return oldGetWallCollisionsForRay.call(this, ray, filteredWalls, {mode});
   }
 }
