@@ -11,7 +11,7 @@ export function Token_onUpdate() {
         // If Actor data link has changed, replace the Token actor
         if ( ["actorId", "actorLink"].some(c => changed.has(c))) this.actor = Actor.fromToken(this);
         if ( !this.data.actorLink && changed.has("actorData") ){
-          this._onUpdateTokenActor(data.actorData);
+            this._onUpdateTokenActor(data.actorData);
         }
     
         // Handle direct Token updates
@@ -20,55 +20,55 @@ export function Token_onUpdate() {
         const positionChange = ["x", "y"].some(c => changed.has(c));
         const perspectiveChange = changed.has("rotation") && this.hasLimitedVisionAngle;
         const visionChange = ["brightLight", "brightSight", "dimLight", "dimSight", "lightAlpha", "lightAngle",
-          "lightColor", "sightAngle", "vision"].some(k => changed.has(k));
+            "lightColor", "sightAngle", "vision"].some(k => changed.has(k));
 /// CHANGE HERE
         const elevationChange = changed.has("elevation");
 
     
         // Change in Token appearance
         if ( fullRedraw ) {
-          const visible = this.visible;
-          this.draw();
-          this.visible = visible;
+            const visible = this.visible;
+            this.draw();
+            this.visible = visible;
         }
     
         // Non-full updates
         else {
-          if ( positionChange ) this.setPosition(this.data.x, this.data.y, options);
-          if ( ["effects", "overlayEffect"].some(k => changed.has(k)) ) this.drawEffects();
-          if ( changed.has("elevation") ) this.drawTooltip();
-          if ( keys.some(k => k.startsWith("bar")) ) this.drawBars();
-          this.refresh();
+            if ( positionChange ) this.setPosition(this.data.x, this.data.y, options);
+            if ( ["effects", "overlayEffect"].some(k => changed.has(k)) ) this.drawEffects();
+            if ( changed.has("elevation") ) this.drawTooltip();
+            if ( keys.some(k => k.startsWith("bar")) ) this.drawBars();
+            this.refresh();
         }
     
         // Changes to Token control eligibility due to visibility changes
         if ( visibilityChange && !game.user.isGM ) {
-          if ( this._controlled && data.hidden ) this.release();
-          else if ( !data.hidden && !canvas.tokens.controlled.length ) this.control({pan: true});
-          this.visible = this.isVisible;
+            if ( this._controlled && data.hidden ) this.release();
+            else if ( !data.hidden && !canvas.tokens.controlled.length ) this.control({pan: true});
+            this.visible = this.isVisible;
         }
     
         // Process perspective changes
 /// CHANGE HERE
         const updatePerspective = (visibilityChange || positionChange || perspectiveChange || visionChange || elevationChange) &&
-          (this.data.vision || changed.has("vision") || this.emitsLight);
+            (this.data.vision || changed.has("vision") || this.emitsLight);
         if ( updatePerspective ) {
-          canvas.sight.updateToken(this, {defer: true});
-          canvas.addPendingOperation("SightLayer.update", canvas.sight.update, canvas.sight);
-          canvas.addPendingOperation("LightingLayer.update", canvas.lighting.update, canvas.lighting);
-          canvas.addPendingOperation(`SoundLayer.update`, canvas.sounds.update, canvas.sounds);
+            canvas.sight.updateToken(this, {defer: true});
+            canvas.addPendingOperation("SightLayer.update", canvas.sight.update, canvas.sight);
+            canvas.addPendingOperation("LightingLayer.update", canvas.lighting.update, canvas.lighting);
+            canvas.addPendingOperation(`SoundLayer.update`, canvas.sounds.update, canvas.sounds);
         }
     
         // Process Combat Tracker changes
         if ( this.inCombat ) {
-          if ( changed.has("name") ) {
-            canvas.addPendingOperation(`Combat.setupTurns`, game.combat.setupTurns, game.combat);
-          }
-          if ( ["effects", "name"].some(k => changed.has(k)) ) {
-            canvas.addPendingOperation(`CombatTracker.render`, ui.combat.render, ui.combat);
-          }
+            if ( changed.has("name") ) {
+                canvas.addPendingOperation(`Combat.setupTurns`, game.combat.setupTurns, game.combat);
+            }
+            if ( ["effects", "name"].some(k => changed.has(k)) ) {
+                canvas.addPendingOperation(`CombatTracker.render`, ui.combat.render, ui.combat);
+            }
         }
-      }
+    }
 }
 
 export function SightLayer_updateToken() {
@@ -104,74 +104,74 @@ export function SightLayer_updateToken() {
         // Prepare vision sources
         if ( isVisionSource ) {
     
-          // Compute vision polygons
-          let dim = globalLight ? 0 : token.getLightRadius(token.data.dimSight);
-          const bright = globalLight ? maxR : token.getLightRadius(token.data.brightSight);
-          if ((dim === 0) && (bright === 0)) dim = canvas.dimensions.size * 0.6;
-          const radius = Math.max(Math.abs(dim), Math.abs(bright));
-          const {los, fov} = this.constructor.computeSight(center, radius, {
-            angle: token.data.sightAngle,
-            cullMult: cullMult,
-            cullMin: cullMin,
-            cullMax: cullMax,
-            density: 6,
-            rotation: token.data.rotation,
-            walls: walls,
-/// CHANGE HERE
-            elevation: token.data.elevation
-          });
-    
-          // Add a vision source
-          const source = new SightLayerSource({
-            x: center.x,
-            y: center.y,
-            los: los,
-            fov: fov,
-            dim: dim,
-            bright: bright
-          });
-          this.sources.vision.set(sourceId, source);
-    
-          // Update fog exploration for the token position
-          this.updateFog(center.x, center.y, Math.max(dim, bright), token.data.sightAngle !== 360, forceUpdateFog);
+            // Compute vision polygons
+            let dim = globalLight ? 0 : token.getLightRadius(token.data.dimSight);
+            const bright = globalLight ? maxR : token.getLightRadius(token.data.brightSight);
+            if ((dim === 0) && (bright === 0)) dim = canvas.dimensions.size * 0.6;
+            const radius = Math.max(Math.abs(dim), Math.abs(bright));
+            const {los, fov} = this.constructor.computeSight(center, radius, {
+                angle: token.data.sightAngle,
+                cullMult: cullMult,
+                cullMin: cullMin,
+                cullMax: cullMax,
+                density: 6,
+                rotation: token.data.rotation,
+                walls: walls,
+    /// CHANGE HERE
+                elevation: token.data.elevation
+            });
+        
+            // Add a vision source
+            const source = new SightLayerSource({
+                x: center.x,
+                y: center.y,
+                los: los,
+                fov: fov,
+                dim: dim,
+                bright: bright
+            });
+            this.sources.vision.set(sourceId, source);
+        
+            // Update fog exploration for the token position
+            this.updateFog(center.x, center.y, Math.max(dim, bright), token.data.sightAngle !== 360, forceUpdateFog);
         }
     
         // Prepare light sources
         if ( isLightSource ) {
     
-          // Compute light emission polygons
-          const dim = token.getLightRadius(token.data.dimLight);
-          const bright = token.getLightRadius(token.data.brightLight);
-          const radius = Math.max(Math.abs(dim), Math.abs(bright));
-          const {fov} = this.constructor.computeSight(center, radius, {
-            angle: token.data.lightAngle,
-            cullMult: cullMult,
-            cullMin: cullMin,
-            cullMax: cullMax,
-            density: 6,
-            rotation: token.data.rotation,
-            walls: walls,
-/// CHANGE HERE
-            elevation: token.data.elevation
-          });
-    
-          // Add a light source
-          const source = new SightLayerSource({
-            x: center.x,
-            y: center.y,
-            los: null,
-            fov: fov,
-            dim: dim,
-            bright: bright,
-            color: token.data.lightColor,
-            alpha: token.data.lightAlpha
-          });
-          this.sources.lights.set(sourceId, source);
-        }
-    
-        // Maybe update
-        if ( CONFIG.debug.sight ) console.debug(`Updated SightLayer source for ${sourceId}`);
-        if ( !defer ) this.update();
+            // Compute light emission polygons
+            const dim = token.getLightRadius(token.data.dimLight);
+            const bright = token.getLightRadius(token.data.brightLight);
+            const radius = Math.max(Math.abs(dim), Math.abs(bright));
+            const {fov} = this.constructor.computeSight(center, radius, {
+                angle: token.data.lightAngle,
+                cullMult: cullMult,
+                cullMin: cullMin,
+                cullMax: cullMax,
+                density: 6,
+                rotation: token.data.rotation,
+                walls: walls,
+    /// CHANGE HERE
+                elevation: token.data.elevation
+            });
+        
+            // Add a light source
+            const source = new SightLayerSource({
+                x: center.x,
+                y: center.y,
+                los: null,
+                fov: fov,
+                dim: dim,
+                bright: bright,
+                color: token.data.lightColor,
+                alpha: token.data.lightAlpha
+            });
+            this.sources.lights.set(sourceId, source);
+            }
+        
+            // Maybe update
+            if ( CONFIG.debug.sight ) console.debug(`Updated SightLayer source for ${sourceId}`);
+            if ( !defer ) this.update();
       }
 }
 
@@ -200,25 +200,25 @@ export function SightLayer_computeSight() {
         walls = walls || canvas.walls.blockVision;
         for ( let r of rays ) {
     
-          // Special case: the central ray in a limited angle
-          if ( r._isCenter ) {
-            r.unrestricted = r.limited = r.project(0.5);
-            continue;
-          }
-    
-          // Normal case: identify the closest collision point both unrestricted (LOS) and restricted (FOV)
-/// CHANGE HERE
-          let collision = WallsLayer.getWallCollisionsForRay(r, walls, {mode: "closest", elevation});
+            // Special case: the central ray in a limited angle
+            if ( r._isCenter ) {
+                r.unrestricted = r.limited = r.project(0.5);
+                continue;
+            }
+        
+            // Normal case: identify the closest collision point both unrestricted (LOS) and restricted (FOV)
+    /// CHANGE HERE
+            let collision = WallsLayer.getWallCollisionsForRay(r, walls, {mode: "closest", elevation});
 
-          r.unrestricted = collision || { x: r.B.x, y: r.B.y, t0: 1, t1: 0};
-          r.limited = ( r.unrestricted.t0 <= limit ) ? r.unrestricted : r.project(limit);
+            r.unrestricted = collision || { x: r.B.x, y: r.B.y, t0: 1, t1: 0};
+            r.limited = ( r.unrestricted.t0 <= limit ) ? r.unrestricted : r.project(limit);
         }
     
         // Reduce collisions and limits to line-of-sight and field-of-view polygons
         let [losPoints, fovPoints] = rays.reduce((acc, r) => {
-          acc[0].push(r.unrestricted.x, r.unrestricted.y);
-          acc[1].push(r.limited.x, r.limited.y);
-          return acc;
+            acc[0].push(r.unrestricted.x, r.unrestricted.y);
+            acc[1].push(r.limited.x, r.limited.y);
+            return acc;
         }, [[], []]);
     
         // Construct visibility polygons and return them with the rays
@@ -229,15 +229,15 @@ export function SightLayer_computeSight() {
 }
 
 export function WallsLayer_getWallCollisionsForRay() {
-  const oldGetWallCollisionsForRay = WallsLayer.getWallCollisionsForRay;
-  WallsLayer.getWallCollisionsForRay = function(ray, walls, {mode="all", elevation=null}={}) {
-    let filteredWalls = walls;
-    if (elevation != null) {
-      filteredWalls = walls.filter(w => {
-        const { wallHeightTop, wallHeightBottom } = getWallBounds(w);
-        return elevation >= wallHeightBottom && elevation < wallHeightTop;
-      })
+    const oldGetWallCollisionsForRay = WallsLayer.getWallCollisionsForRay;
+    WallsLayer.getWallCollisionsForRay = function(ray, walls, {mode="all", elevation=null}={}) {
+        let filteredWalls = walls;
+        if (elevation != null) {
+            filteredWalls = walls.filter(w => {
+                const { wallHeightTop, wallHeightBottom } = getWallBounds(w);
+                return elevation >= wallHeightBottom && elevation < wallHeightTop;
+            })
+        }
+        return oldGetWallCollisionsForRay.call(this, ray, filteredWalls, {mode});
     }
-    return oldGetWallCollisionsForRay.call(this, ray, filteredWalls, {mode});
-  }
 }
