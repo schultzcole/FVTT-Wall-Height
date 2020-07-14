@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [1.0.2] 2020-07-13
+
+### FIXED
+
+- Fixed an issue where custom token darkvision properties added in the PF1 and D35E systems were not being included because of a patch conflict.
+
 ## [1.0.1] 2020-07-12
 
 ### FIXED
