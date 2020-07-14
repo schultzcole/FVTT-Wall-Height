@@ -1,7 +1,7 @@
 import { MODULE_SCOPE, TOP_KEY, BOTTOM_KEY } from "./const.js";
 import { getWallBounds } from "./utils.js";
 
-export function Token_onUpdate() {
+export function Patch_Token_onUpdate() {
     Token.prototype._onUpdate = function(data, options) {
         // Copied from Token#_onUpdate. Foundry version 0.6.4, foundry.js:38152
 
@@ -71,7 +71,7 @@ export function Token_onUpdate() {
     }
 }
 
-export function SightLayer_updateToken() {
+export function Patch_SightLayer_updateToken() {
     SightLayer.prototype.updateToken = function(token, {defer=false, deleted=false, walls=null, forceUpdateFog=false}={}) {
         // Copied from SightLayer#updateToken. Foundry version 0.6.4, foundry.js:32366
 
@@ -175,7 +175,7 @@ export function SightLayer_updateToken() {
       }
 }
 
-export function SightLayer_computeSight() {
+export function Patch_SightLayer_computeSight() {
     SightLayer.computeSight = function(origin, radius, {minAngle=null, maxAngle=null, cullMin=10, cullMult=2, cullMax=20,
         density=6, walls, rotation=0, elevation=null, angle=360}={}) {
         // Copied from SightLayer#computeSight. Foundry version 0.6.4, foundry.js:32815
@@ -228,7 +228,7 @@ export function SightLayer_computeSight() {
       }
 }
 
-export function WallsLayer_getWallCollisionsForRay() {
+export function Patch_WallsLayer_getWallCollisionsForRay() {
     const oldGetWallCollisionsForRay = WallsLayer.getWallCollisionsForRay;
     WallsLayer.getWallCollisionsForRay = function(ray, walls, {mode="all", elevation=null}={}) {
         let filteredWalls = walls;
