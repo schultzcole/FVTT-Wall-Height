@@ -10,7 +10,11 @@ export function PF1Patch_SightLayer_updateToken() {
         this.sources.vision.delete(sourceId);
         this.sources.lights.delete(sourceId);
         if (deleted) return defer ? null : this.update();
-        if (token.data.hidden && !game.user.isGM) return;
+
+        // CHANGE HERE - Add compatibility for dynamic effects player controls invisible tokens setting
+        const deCtrlInvisTokens = game.settings.get("dynamiceffects", "playerControlsInvisibleTokens");
+        const playerCanView = deCtrlInvisTokens && token.actor?.hasPerm(game.user, "OWNER");
+        if (token.data.hidden && !(game.user.isGM || playerCanView)) return;
 
         // Vision is displayed if the token is controlled, or if it is observed by a player with no tokens controlled
         let displayVision = token._controlled;
