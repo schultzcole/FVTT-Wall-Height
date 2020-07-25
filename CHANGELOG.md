@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [1.0.4] 2020-07-25
+
+### ADDED
+
+-   Add compatibility support for Dynamic Effects "Player Controls Invisible Tokens" setting.
+
 ## [1.0.3] 2020-07-20
 
 ### ADDED
