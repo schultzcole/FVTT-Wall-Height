@@ -93,7 +93,9 @@ export function Patch_SightLayer_updateToken() {
         if (deleted) return defer ? null : this.update();
 
         // CHANGE HERE - Add compatibility for dynamic effects player controls invisible tokens setting
-        const deCtrlInvisTokens = game.settings.get("dynamiceffects", "playerControlsInvisibleTokens");
+        const deCtrlInvisTokens =
+            game.modules.get("dynamiceffects")?.active &&
+            game.settings.get("dynamiceffects", "playerControlsInvisibleTokens");
         const playerCanView = deCtrlInvisTokens && token.actor?.hasPerm(game.user, "OWNER");
         if (token.data.hidden && !(game.user.isGM || playerCanView)) return;
 
