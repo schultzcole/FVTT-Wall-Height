@@ -1,23 +1,10 @@
-import { Patch_Token_onUpdate, Patch_SightLayer_updateToken, Patch_SightLayer_computeSight, Patch_WallsLayer_getWallCollisionsForRay } from "./patches.js";
-import { PF1Patch_SightLayer_updateToken, PF1Patch_Token_getDarkvisionSight } from "./pf1-patches.js";
+import { Patch_Token_onUpdate, Patch_WallCollisions } from "./patches.js";
 import { MODULE_SCOPE, TOP_KEY, BOTTOM_KEY } from "./const.js";
 import { getWallBounds } from "./utils.js";
 
 Hooks.on("init", () => {
     Patch_Token_onUpdate();
-    Patch_SightLayer_computeSight();
-    Patch_WallsLayer_getWallCollisionsForRay();
-
-    const systemId = game.data.system.id;
-    switch (systemId) {
-        case "D35E":
-        case "pf1":
-            PF1Patch_SightLayer_updateToken();
-            PF1Patch_Token_getDarkvisionSight();
-            break;
-        default:
-            Patch_SightLayer_updateToken();
-    }
+    Patch_WallCollisions();
 });
 
 Hooks.on("renderWallConfig", (app, html, data) => {
