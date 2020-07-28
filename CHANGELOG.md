@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [2.0.0] 2020-07-27
+
+### CHANGED
+
+- Massively refactor how functions are patched, which will hopefully decrease the possibility of conflicts in the future (HUGE thanks to @ruipin for the help with this).
+
 ## [1.0.5] 2020-07-26
 
 ### FIXED
