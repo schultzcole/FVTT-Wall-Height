@@ -2,20 +2,13 @@ import { MODULE_SCOPE, TOP_KEY, BOTTOM_KEY } from "./const.js";
 import { getWallBounds } from "./utils.js";
 
 export function Patch_Token_onUpdate() {
+    const oldOnUpdate = Token.prototype._onUpdate;
     Token.prototype._onUpdate = function (data, options) {
-        // Copied from Token#_onUpdate. Foundry version 0.6.4, foundry.js:38152
+        oldOnUpdate.apply(this, arguments);
 
-        const keys = Object.keys(data);
-        const changed = new Set(keys);
+        const changed = new Set(Object.keys(data));
 
-        // If Actor data link has changed, replace the Token actor
-        if (["actorId", "actorLink"].some((c) => changed.has(c))) this.actor = Actor.fromToken(this);
-        if (!this.data.actorLink && changed.has("actorData")) {
-            this._onUpdateTokenActor(data.actorData);
-        }
-
-        // Handle direct Token updates
-        const fullRedraw = ["img", "name", "width", "height", "tint"].some((r) => changed.has(r));
+        // existing conditions that have already been checked to perform a sight layer update
         const visibilityChange = changed.has("hidden");
         const positionChange = ["x", "y"].some((c) => changed.has(c));
         const perspectiveChange = changed.has("rotation") && this.hasLimitedVisionAngle;
@@ -30,251 +23,51 @@ export function Patch_Token_onUpdate() {
             "sightAngle",
             "vision",
         ].some((k) => changed.has(k));
-        /// CHANGE HERE
-        const elevationChange = changed.has("elevation");
 
-        // Change in Token appearance
-        if (fullRedraw) {
-            const visible = this.visible;
-            this.draw();
-            this.visible = visible;
-        }
-
-        // Non-full updates
-        else {
-            if (positionChange) this.setPosition(this.data.x, this.data.y, options);
-            if (["effects", "overlayEffect"].some((k) => changed.has(k))) this.drawEffects();
-            if (changed.has("elevation")) this.drawTooltip();
-            if (keys.some((k) => k.startsWith("bar"))) this.drawBars();
-            this.refresh();
-        }
-
-        // Changes to Token control eligibility due to visibility changes
-        if (visibilityChange && !game.user.isGM) {
-            if (this._controlled && data.hidden) this.release();
-            else if (!data.hidden && !canvas.tokens.controlled.length) this.control({ pan: true });
-            this.visible = this.isVisible;
-        }
-
-        // Process perspective changes
-        /// CHANGE HERE
-        const updatePerspective =
-            (visibilityChange || positionChange || perspectiveChange || visionChange || elevationChange) &&
+        const alreadyUpdated =
+            (visibilityChange || positionChange || perspectiveChange || visionChange) &&
             (this.data.vision || changed.has("vision") || this.emitsLight);
-        if (updatePerspective) {
+
+        // if the original _onUpdate didn't perform a sight layer update,
+        // but elevation has changed, do the update now
+        if (changed.has("elevation") && !alreadyUpdated) {
             canvas.sight.updateToken(this, { defer: true });
             canvas.addPendingOperation("SightLayer.update", canvas.sight.update, canvas.sight);
             canvas.addPendingOperation("LightingLayer.update", canvas.lighting.update, canvas.lighting);
             canvas.addPendingOperation(`SoundLayer.update`, canvas.sounds.update, canvas.sounds);
         }
-
-        // Process Combat Tracker changes
-        if (this.inCombat) {
-            if (changed.has("name")) {
-                canvas.addPendingOperation(`Combat.setupTurns`, game.combat.setupTurns, game.combat);
-            }
-            if (["effects", "name"].some((k) => changed.has(k))) {
-                canvas.addPendingOperation(`CombatTracker.render`, ui.combat.render, ui.combat);
-            }
-        }
     };
 }
 
-export function Patch_SightLayer_updateToken() {
-    SightLayer.prototype.updateToken = function (
-        token,
-        { defer = false, deleted = false, walls = null, forceUpdateFog = false } = {}
-    ) {
-        // Copied from SightLayer#updateToken. Foundry version 0.6.4, foundry.js:32366
+export function Patch_WallCollisions() {
+    // store the token elevation in a common scope, so that it can be used by the following functions without needing to pass it explicitly
+    let currentTokenElevation = null;
 
-        let sourceId = `Token.${token.id}`;
-        this.sources.vision.delete(sourceId);
-        this.sources.lights.delete(sourceId);
-        if (deleted) return defer ? null : this.update();
-
-        // CHANGE HERE - Add compatibility for dynamic effects player controls invisible tokens setting
-        const deCtrlInvisTokens =
-            game.modules.get("dynamiceffects")?.active &&
-            game.settings.get("dynamiceffects", "playerControlsInvisibleTokens");
-        const playerCanView = deCtrlInvisTokens && token.actor?.hasPerm(game.user, "OWNER");
-        if (token.data.hidden && !(game.user.isGM || playerCanView)) return;
-
-        // Vision is displayed if the token is controlled, or if it is observed by a player with no tokens controlled
-        let displayVision = token._controlled;
-
-        // CHANGE HERE - Add compatibility for No Summon Vision
-        const hasControlledTokens = game.modules.get("no-summon-vision")?.active
-            ? canvas.tokens.controlled.every((t) => !t.data.vision)
-            : !canvas.tokens.controlled.length;
-        if (!displayVision && !game.user.isGM && hasControlledTokens) {
-            displayVision = token.actor && token.actor.hasPerm(game.user, "OBSERVER");
-        }
-
-        // Take no action for Tokens which are invisible or Tokens that have no sight or light
-        const globalLight = canvas.scene.data.globalLight;
-        let isVisionSource = this.tokenVision && token.hasSight && displayVision;
-        let isLightSource = token.emitsLight;
-
-        // If the Token is no longer a source, we don't need further work
-        if (!isVisionSource && !isLightSource) return;
-
-        // Prepare some common data
-        const center = token.getSightOrigin();
-        const maxR = globalLight ? Math.max(canvas.dimensions.width, canvas.dimensions.height) : null;
-        let [cullMult, cullMin, cullMax] = this._cull;
-        if (globalLight) cullMin = maxR;
-
-        // Prepare vision sources
-        if (isVisionSource) {
-            // Compute vision polygons
-            let dim = globalLight ? 0 : token.getLightRadius(token.data.dimSight);
-            const bright = globalLight ? maxR : token.getLightRadius(token.data.brightSight);
-            if (dim === 0 && bright === 0) dim = canvas.dimensions.size * 0.6;
-            const radius = Math.max(Math.abs(dim), Math.abs(bright));
-            const { los, fov } = this.constructor.computeSight(center, radius, {
-                angle: token.data.sightAngle,
-                cullMult: cullMult,
-                cullMin: cullMin,
-                cullMax: cullMax,
-                density: 6,
-                rotation: token.data.rotation,
-                walls: walls,
-                /// CHANGE HERE
-                elevation: token.data.elevation,
-            });
-
-            // Add a vision source
-            const source = new SightLayerSource({
-                x: center.x,
-                y: center.y,
-                los: los,
-                fov: fov,
-                dim: dim,
-                bright: bright,
-            });
-            this.sources.vision.set(sourceId, source);
-
-            // Update fog exploration for the token position
-            this.updateFog(center.x, center.y, Math.max(dim, bright), token.data.sightAngle !== 360, forceUpdateFog);
-        }
-
-        // Prepare light sources
-        if (isLightSource) {
-            // Compute light emission polygons
-            const dim = token.getLightRadius(token.data.dimLight);
-            const bright = token.getLightRadius(token.data.brightLight);
-            const radius = Math.max(Math.abs(dim), Math.abs(bright));
-            const { fov } = this.constructor.computeSight(center, radius, {
-                angle: token.data.lightAngle,
-                cullMult: cullMult,
-                cullMin: cullMin,
-                cullMax: cullMax,
-                density: 6,
-                rotation: token.data.rotation,
-                walls: walls,
-                /// CHANGE HERE
-                elevation: token.data.elevation,
-            });
-
-            // Add a light source
-            const source = new SightLayerSource({
-                x: center.x,
-                y: center.y,
-                los: null,
-                fov: fov,
-                dim: dim,
-                bright: bright,
-                color: token.data.lightColor,
-                alpha: token.data.lightAlpha,
-            });
-            this.sources.lights.set(sourceId, source);
-        }
-
-        // Maybe update
-        if (CONFIG.debug.sight) console.debug(`Updated SightLayer source for ${sourceId}`);
-        if (!defer) this.update();
+    const oldSightLayerUpdateToken = SightLayer.prototype.updateToken;
+    SightLayer.prototype.updateToken = function (token) {
+        currentTokenElevation = token.data.elevation;
+        oldSightLayerUpdateToken.apply(this, arguments);
+        currentTokenElevation = null;
     };
-}
 
-export function Patch_SightLayer_computeSight() {
-    SightLayer.computeSight = function (
-        origin,
-        radius,
-        {
-            minAngle = null,
-            maxAngle = null,
-            cullMin = 10,
-            cullMult = 2,
-            cullMax = 20,
-            density = 6,
-            walls,
-            rotation = 0,
-            elevation = null,
-            angle = 360,
-        } = {}
-    ) {
-        // Copied from SightLayer#computeSight. Foundry version 0.6.4, foundry.js:32815
+    if (["D35E", "pf1e"].includes(game.data.system.id)) {
+        const oldGetDarkVisionSight = Token.prototype.getDarkvisionSight;
+        Token.prototype.getDarkvisionSight = function () {
+            currentTokenElevation = this.data.elevation;
+            const result = oldGetDarkVisionSight.apply(this, arguments);
+            currentTokenElevation = null;
+            return result;
+        };
+    }
 
-        // Get the maximum sight distance and the limiting radius
-        let d = canvas.dimensions;
-        let { x, y } = origin;
-        let distance = Math.max(d.width, d.height);
-        let limit = radius / distance;
-        let cullDistance = Math.clamped(radius * cullMult, cullMin * d.size, cullMax * d.size);
-        angle = angle || 360;
-
-        // Determine the direction of facing, the angle of vision, and the angles of boundary rays
-        const limitAngle = angle.between(0, 360, false);
-        const aMin = limitAngle ? normalizeRadians(toRadians(rotation + 90 - angle / 2)) : -Math.PI;
-        const aMax = limitAngle ? aMin + toRadians(angle) : Math.PI;
-
-        // Cast sight rays needed to determine the polygons
-        let rays = this._castSightRays(x, y, distance, cullDistance, density, limitAngle, aMin, aMax);
-
-        // Iterate over rays and record their points of collision with blocking walls
-        walls = walls || canvas.walls.blockVision;
-        for (let r of rays) {
-            // Special case: the central ray in a limited angle
-            if (r._isCenter) {
-                r.unrestricted = r.limited = r.project(0.5);
-                continue;
-            }
-
-            // Normal case: identify the closest collision point both unrestricted (LOS) and restricted (FOV)
-            /// CHANGE HERE
-            let collision = WallsLayer.getWallCollisionsForRay(r, walls, { mode: "closest", elevation });
-
-            r.unrestricted = collision || { x: r.B.x, y: r.B.y, t0: 1, t1: 0 };
-            r.limited = r.unrestricted.t0 <= limit ? r.unrestricted : r.project(limit);
-        }
-
-        // Reduce collisions and limits to line-of-sight and field-of-view polygons
-        let [losPoints, fovPoints] = rays.reduce(
-            (acc, r) => {
-                acc[0].push(r.unrestricted.x, r.unrestricted.y);
-                acc[1].push(r.limited.x, r.limited.y);
-                return acc;
-            },
-            [[], []]
-        );
-
-        // Construct visibility polygons and return them with the rays
-        const los = new PIXI.Polygon(...losPoints);
-        const fov = new PIXI.Polygon(...fovPoints);
-        return { rays, los, fov };
-    };
-}
-
-export function Patch_WallsLayer_getWallCollisionsForRay() {
     const oldGetWallCollisionsForRay = WallsLayer.getWallCollisionsForRay;
-    WallsLayer.getWallCollisionsForRay = function (ray, walls, { mode = "all", elevation = null } = {}) {
-        let filteredWalls = walls;
-        if (elevation != null) {
-            filteredWalls = walls.filter((w) => {
+    WallsLayer.getWallCollisionsForRay = function () {
+        if (currentTokenElevation != null) {
+            arguments[1] = arguments[1].filter((w) => {
                 const { wallHeightTop, wallHeightBottom } = getWallBounds(w);
-                return elevation >= wallHeightBottom && elevation < wallHeightTop;
+                return currentTokenElevation >= wallHeightBottom && currentTokenElevation < wallHeightTop;
             });
         }
-        return oldGetWallCollisionsForRay.call(this, ray, filteredWalls, { mode });
+        return oldGetWallCollisionsForRay.apply(this, arguments);
     };
 }
