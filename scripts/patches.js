@@ -4,12 +4,11 @@ import { getWallBounds } from "./utils.js";
 export function Patch_Token_onUpdate() {
     const oldOnUpdate = Token.prototype._onUpdate;
     Token.prototype._onUpdate = function (data, options) {
-        oldOnUpdate.call(this, data, options);
+        oldOnUpdate.apply(this, arguments);
 
         const changed = new Set(Object.keys(data));
 
-        // if the original _onUpdate didn't perform a sight layer update,
-        // but elevation has changed, do the update now
+        // existing conditions that have already been checked to perform a sight layer update
         const visibilityChange = changed.has("hidden");
         const positionChange = ["x", "y"].some((c) => changed.has(c));
         const perspectiveChange = changed.has("rotation") && this.hasLimitedVisionAngle;
@@ -24,9 +23,13 @@ export function Patch_Token_onUpdate() {
             "sightAngle",
             "vision",
         ].some((k) => changed.has(k));
+
         const alreadyUpdated =
             (visibilityChange || positionChange || perspectiveChange || visionChange) &&
             (this.data.vision || changed.has("vision") || this.emitsLight);
+
+        // if the original _onUpdate didn't perform a sight layer update,
+        // but elevation has changed, do the update now
         if (changed.has("elevation") && !alreadyUpdated) {
             canvas.sight.updateToken(this, { defer: true });
             canvas.addPendingOperation("SightLayer.update", canvas.sight.update, canvas.sight);
@@ -41,12 +44,9 @@ export function Patch_WallCollisions() {
     let currentTokenElevation = null;
 
     const oldSightLayerUpdateToken = SightLayer.prototype.updateToken;
-    SightLayer.prototype.updateToken = function (
-        token,
-        { defer = false, deleted = false, walls = null, forceUpdateFog = false } = {}
-    ) {
+    SightLayer.prototype.updateToken = function (token) {
         currentTokenElevation = token.data.elevation;
-        oldSightLayerUpdateToken.call(this, token, { defer, deleted, walls, forceUpdateFog });
+        oldSightLayerUpdateToken.apply(this, arguments);
         currentTokenElevation = null;
     };
 
@@ -54,21 +54,20 @@ export function Patch_WallCollisions() {
         const oldGetDarkVisionSight = Token.prototype.getDarkvisionSight;
         Token.prototype.getDarkvisionSight = function () {
             currentTokenElevation = this.data.elevation;
-            const result = oldGetDarkVisionSight.call(this);
+            const result = oldGetDarkVisionSight.apply(this, arguments);
             currentTokenElevation = null;
             return result;
         };
     }
 
     const oldGetWallCollisionsForRay = WallsLayer.getWallCollisionsForRay;
-    WallsLayer.getWallCollisionsForRay = function (ray, walls, { mode = "all" } = {}) {
-        let filteredWalls = walls;
+    WallsLayer.getWallCollisionsForRay = function () {
         if (currentTokenElevation != null) {
-            filteredWalls = walls.filter((w) => {
+            arguments[1] = arguments[1].filter((w) => {
                 const { wallHeightTop, wallHeightBottom } = getWallBounds(w);
                 return currentTokenElevation >= wallHeightBottom && currentTokenElevation < wallHeightTop;
             });
         }
-        return oldGetWallCollisionsForRay.call(this, ray, filteredWalls, { mode });
+        return oldGetWallCollisionsForRay.apply(this, arguments);
     };
 }
