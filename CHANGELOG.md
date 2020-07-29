@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [2.0.1] 2020-07-28
+
+### CHANGED
+
+- Made some changes to reduce likelihood of errors caused by changing function signatures (Once again thanks to @ruipin).
+
 ## [2.0.0] 2020-07-27
 
 ### CHANGED
