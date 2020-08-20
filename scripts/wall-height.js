@@ -10,7 +10,7 @@ Hooks.on("init", () => {
 Hooks.on("renderWallConfig", (app, html, data) => {
     const { wallHeightTop, wallHeightBottom } = getWallBounds(app.object);
     html.height("325px");
-    html.find("form button").before(`
+    html.find("form button").last().before(`
         <div class="form-group">
             <label>Wall Height (Top)</label>
             <input name="flags.${MODULE_SCOPE}.${TOP_KEY}" type="text" data-dtype="Number" value="${wallHeightTop}">
