@@ -54,11 +54,26 @@ export function Patch_WallCollisions() {
         const oldGetDarkVisionSight = Token.prototype.getDarkvisionSight;
         Token.prototype.getDarkvisionSight = function () {
             currentTokenElevation = this.data.elevation;
-            const result = oldGetDarkVisionSight.apply(this, arguments);
-            currentTokenElevation = null;
-            return result;
+            return oldGetDarkVisionSight.apply(this, arguments);
         };
     }
+    const oldOnUpdate = Token.prototype._onUpdate;
+    Token.prototype._onUpdate = function (data, options) {
+        currentTokenElevation = null;
+        oldOnUpdate.apply(this, arguments);
+    };
+
+    const oldCanDrag = Token.prototype._canDrag;
+    Token.prototype._canDrag = function (user, event) {
+        currentTokenElevation = event.target.data.elevation;
+        return oldCanDrag.apply(this, arguments);
+    };
+
+    const oldGetShiftedPosition = Token.prototype._getShiftedPosition;
+    Token.prototype._getShiftedPosition = function (dx, dy) {
+        currentTokenElevation = this.data.elevation;
+       return oldGetShiftedPosition.apply(this, arguments);
+    };
 
     const oldGetWallCollisionsForRay = WallsLayer.getWallCollisionsForRay;
     WallsLayer.getWallCollisionsForRay = function () {
