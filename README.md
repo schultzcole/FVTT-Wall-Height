@@ -1,4 +1,4 @@
-# Wall Height
+# Wall Height (Proof of Concept)
 
 Adds the ability to set wall height for walls so that tokens can look over them (or under them).
 
@@ -8,7 +8,7 @@ The top and bottom heights of the walls are configurable in the wall configurati
 
 ## Compatibility
 
-This module is likely incompatible with modules which modify token vision. Confirmed incompatible with the Haste module for now.
+This module is likely incompatible with modules which modify token vision.
 
 ## License
 
