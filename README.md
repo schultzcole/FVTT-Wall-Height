@@ -10,7 +10,7 @@ The top and bottom heights of the walls are configurable in the wall configurati
 
 ## Project Status
 
-Wall Height was originally released as a proof of concept to show that just a feature was possible. At this time, I believe it has proven it's point and do not intend to release new features or updates to the module, unless a major bug is found. The project will be completely abandoned by me when 0.7.x is released to beta, and if it is not compatible with that update, I will unlist it from the website.
+Wall Height was originally released as a proof of concept to show that just a feature was possible. At this time, I believe it has proven it's point and do not intend to release new features or updates to the module, unless a major bug is found. I *do* intend to update it for 0.7.x compatibility once 0.7.x is stable.
 
 ## Compatibility
 
