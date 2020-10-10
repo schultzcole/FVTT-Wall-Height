@@ -43,31 +43,23 @@ export function Patch_WallCollisions() {
     // store the token elevation in a common scope, so that it can be used by the following functions without needing to pass it explicitly
     let currentTokenElevation = null;
 
-    const oldSightLayerUpdateToken = SightLayer.prototype.updateToken;
-    SightLayer.prototype.updateToken = function (token) {
-        currentTokenElevation = token.data.elevation;
-        oldSightLayerUpdateToken.apply(this, arguments);
+    const oldTokenUpdateSource = Token.prototype.updateSource;
+    Token.prototype.updateSource = function () {
+        currentTokenElevation = this.data.elevation;
+        oldTokenUpdateSource.apply(this, arguments);
         currentTokenElevation = null;
     };
 
-    if (["D35E", "pf1e"].includes(game.data.system.id)) {
-        const oldGetDarkVisionSight = Token.prototype.getDarkvisionSight;
-        Token.prototype.getDarkvisionSight = function () {
-            currentTokenElevation = this.data.elevation;
-            const result = oldGetDarkVisionSight.apply(this, arguments);
-            currentTokenElevation = null;
-            return result;
-        };
-    }
-
-    const oldGetWallCollisionsForRay = WallsLayer.getWallCollisionsForRay;
-    WallsLayer.getWallCollisionsForRay = function () {
-        if (currentTokenElevation != null) {
-            arguments[1] = arguments[1].filter((w) => {
-                const { wallHeightTop, wallHeightBottom } = getWallBounds(w);
-                return currentTokenElevation >= wallHeightBottom && currentTokenElevation < wallHeightTop;
-            });
+    const oldWallsLayerTestWall = WallsLayer.testWall;
+    WallsLayer.testWall = function (ray, wall) {
+        const { wallHeightTop, wallHeightBottom } = getWallBounds(wall);
+        if (
+            currentTokenElevation == null ||
+            (currentTokenElevation >= wallHeightBottom && currentTokenElevation < wallHeightTop)
+        ) {
+            return oldWallsLayerTestWall.apply(this, arguments);
+        } else {
+            return null;
         }
-        return oldGetWallCollisionsForRay.apply(this, arguments);
     };
 }
