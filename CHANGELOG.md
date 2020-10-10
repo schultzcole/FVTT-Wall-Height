@@ -4,7 +4,7 @@
 
 ### FIXED
 
-- Fix an issue that would cause the wall height fields to appear multiple times in the wall config dialog, creating invalid wall heights.
+- Fix an issue that would cause the wall height fields to appear multiple times in the wall config dialog, creating invalid wall heights. (thank you Exitalterego for the pull request)
 
 ## [2.0.1] 2020-07-28
 
