@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [3.0.0] TBD
+
+Currently in release candidate state. Will be released for real after the stable 0.7 release
+
+### CHANGED
+
+- Ensure that wall height works correctly with the extensive sight calculation changes in 0.7
+
 ## [2.0.2] 2020-10-10
 
 ### FIXED
