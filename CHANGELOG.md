@@ -1,8 +1,6 @@
 # CHANGELOG
 
-## [3.0.0] TBD
-
-Currently in release candidate state. Will be released for real after the stable 0.7 release
+## [3.0.0] 2020-10-21
 
 ### CHANGED
 

@@ -2,17 +2,17 @@
   "name": "wall-height",
   "title": "Wall Height",
   "description": "Adds the ability to set wall height for walls so that tokens can look over them.",
-  "version": "3.0.0rc",
+  "version": "3.0.0",
   "author": "Cole Schultz (cole#9640)",
   "esmodules": [
     "scripts/wall-height.js"
   ],
   "minimumCoreVersion": "0.7.2",
-  "compatibleCoreVersion": "0.7.3",
+  "compatibleCoreVersion": "0.7.5",
   "url": "https://github.com/schultzcole/FVTT-Wall-Height",
   "manifest": "https://raw.githubusercontent.com/schultzcole/FVTT-Wall-Height/master/module.json",
-  "download": "https://github.com/schultzcole/FVTT-Wall-Height/archive/3.0.0rc.zip",
-  "license": "https://github.com/schultzcole/FVTT-Wall-Height/blob/3.0.0rc/LICENSE",
-  "readme": "https://github.com/schultzcole/FVTT-Wall-Height/blob/3.0.0rc/README.md",
-  "changelog": "https://github.com/schultzcole/FVTT-Wall-Height/blob/3.0.0rc/CHANGELOG.md"
+  "download": "https://github.com/schultzcole/FVTT-Wall-Height/archive/3.0.0.zip",
+  "license": "https://github.com/schultzcole/FVTT-Wall-Height/blob/3.0.0/LICENSE",
+  "readme": "https://github.com/schultzcole/FVTT-Wall-Height/blob/3.0.0/README.md",
+  "changelog": "https://github.com/schultzcole/FVTT-Wall-Height/blob/3.0.0/CHANGELOG.md"
 }
