@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [3.0.1] 2020-12-16
+
+### FIXED
+
+- Fix an issue that would prevent the wall height fields from being shown in the wall config dialog if the user's language was not English. (Thank you capoeria for reporting this issue)
+
+### CHANGED
+
+- Add support for translations. Currently, only English is included, but PRs are accepted for translations.
+- Dynamically recalculate wall config dialog height after injecting wall height fields (prevents scrollbar from showing).
+- Bump core compatibility version to 0.7.8.
+
 ## [3.0.0] 2020-10-21
 
 ### CHANGED

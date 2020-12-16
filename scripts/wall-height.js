@@ -9,15 +9,17 @@ Hooks.on("init", () => {
 
 Hooks.on("renderWallConfig", (app, html, data) => {
     const { wallHeightTop, wallHeightBottom } = getWallBounds(app.object);
-    html.height("325px");
-    html.find(".form-group:contains('Door State')").after(`
+    const topLabel = game.i18n.localize(`${MODULE_SCOPE}.WallHeightTopLabel`);
+    const bottomLabel = game.i18n.localize(`${MODULE_SCOPE}.WallHeightBottomLabel`);
+    html.find(".form-group").last().after(`
         <div class="form-group">
-            <label>Wall Height (Top)</label>
+            <label>${topLabel}</label>
             <input name="flags.${MODULE_SCOPE}.${TOP_KEY}" type="text" data-dtype="Number" value="${wallHeightTop}">
         </div>
         <div class="form-group">
-            <label>Wall Height (Bottom)</label>
+            <label>${bottomLabel}</label>
             <input name="flags.${MODULE_SCOPE}.${BOTTOM_KEY}" type="text" data-dtype="Number" value="${wallHeightBottom}">
         </div>
     `);
+    app.setPosition({ height: "auto" });
 });
