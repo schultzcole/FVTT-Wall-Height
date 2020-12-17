@@ -9,33 +9,28 @@ export function Patch_Token_onUpdate() {
 
         const changed = new Set(Object.keys(data));
 
-        // existing conditions that have already been checked to perform a sight layer update
         const visibilityChange = changed.has("hidden");
-        const positionChange = ["x", "y"].some((c) => changed.has(c));
-        const perspectiveChange = changed.has("rotation") && this.hasLimitedVisionAngle;
-        const visionChange = [
-            "brightLight",
-            "brightSight",
-            "dimLight",
-            "dimSight",
-            "lightAlpha",
-            "lightAngle",
-            "lightColor",
-            "sightAngle",
-            "vision",
-        ].some((k) => changed.has(k));
+        const positionChange = ["x", "y"].some(c => changed.has(c));
+        const rotationChange = changed.has("rotation") && this.hasLimitedVisionAngle;
+        const perspectiveChange = changed.has("vision") ||
+            ((this.data.vision || this.emitsLight) && (visibilityChange || positionChange || rotationChange)) ||
+            (this.data.vision && ["dimSight", "brightSight", "sightAngle"].some(k => changed.has(k))) ||
+            ["dimLight", "brightLight", "lightAlpha", "lightAngle", "lightColor", "lightAnimation"].some(k => changed.has(k));
 
-        const alreadyUpdated =
-            (visibilityChange || positionChange || perspectiveChange || visionChange) &&
-            (this.data.vision || changed.has("vision") || this.emitsLight);
+        const alreadyUpdated = perspectiveChange;
 
         // if the original _onUpdate didn't perform a sight layer update,
         // but elevation has changed, do the update now
         if (changed.has("elevation") && !alreadyUpdated) {
-            this.updateSource({ defer: true });
-            canvas.addPendingOperation("SightLayer.refresh", canvas.sight.refresh, canvas.sight);
-            canvas.addPendingOperation("LightingLayer.refresh", canvas.lighting.refresh, canvas.lighting);
-            canvas.addPendingOperation(`SoundLayer.refresh`, canvas.sounds.refresh, canvas.sounds);
+            const animating = positionChange && (options.animate !== false);
+            if (!animating) {
+                this.updateSource({ defer: true });
+                canvas.addPendingOperation("LightingLayer.refresh", canvas.lighting.refresh, canvas.lighting);
+                canvas.addPendingOperation("SightLayer.refresh", canvas.sight.refresh, canvas.sight, [{
+                    forceUpdateFog: this.hasLimitedVisionAngle
+                }]);
+            }
+            canvas.sounds.refresh();
         }
     };
 
