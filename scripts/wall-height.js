@@ -2,9 +2,14 @@ import { Patch_Token_onUpdate, Patch_WallCollisions } from "./patches.js";
 import { MODULE_SCOPE, TOP_KEY, BOTTOM_KEY } from "./const.js";
 import { getWallBounds } from "./utils.js";
 
-Hooks.on("init", () => {
+Hooks.once("init", () => {
     Patch_Token_onUpdate();
     Patch_WallCollisions();
+});
+
+Hooks.once("ready", () => {
+    if (!game.modules.get("lib-wrapper")?.active && game.user.isGM)
+        ui.notifications.warn("The 'Wall Height' module recommends to install and activate the 'libWrapper' module.");
 });
 
 Hooks.on("renderWallConfig", (app, html, data) => {
