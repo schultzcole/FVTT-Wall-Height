@@ -32,10 +32,10 @@ export function Patch_Token_onUpdate() {
         // if the original _onUpdate didn't perform a sight layer update,
         // but elevation has changed, do the update now
         if (changed.has("elevation") && !alreadyUpdated) {
-            canvas.sight.updateToken(this, { defer: true });
-            canvas.addPendingOperation("SightLayer.update", canvas.sight.update, canvas.sight);
-            canvas.addPendingOperation("LightingLayer.update", canvas.lighting.update, canvas.lighting);
-            canvas.addPendingOperation(`SoundLayer.update`, canvas.sounds.update, canvas.sounds);
+            this.updateSource({ defer: true });
+            canvas.addPendingOperation("SightLayer.refresh", canvas.sight.refresh, canvas.sight);
+            canvas.addPendingOperation("LightingLayer.refresh", canvas.lighting.refresh, canvas.lighting);
+            canvas.addPendingOperation(`SoundLayer.refresh`, canvas.sounds.refresh, canvas.sounds);
         }
     };
 
