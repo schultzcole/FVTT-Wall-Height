@@ -62,4 +62,22 @@ export function Patch_WallCollisions() {
             return null;
         }
     };
+
+    const oldcheckCollision = WallsLayer.checkCollision;
+    WallsLayer.checkCollision = function (ray) {
+        const result = oldcheckCollision(ray);
+        if(result){
+            currentTokenElevation = this.data.elevation;
+            const collisionArray = WallsLayer.getRayCollisions(ray,true,false,"all",null);
+            collisionArray.forEach(function(element){
+               const {wallHeightTop, wallHeightBottom} = getWallBounds(element.Wall);
+               if (currentTokenElevation == null || (currentTokenElevation >= wallHeightBottom && currentTokenElevation < wallHeightTop)) {
+                   return true;
+               }
+            });
+            
+
+        }
+        return null;
+    }
 }
