@@ -47,7 +47,7 @@ export function Patch_WallCollisions() {
     Token.prototype.updateSource = function () {
         currentTokenElevation = this.data.elevation;
         oldTokenUpdateSource.apply(this, arguments);
-        currentTokenElevation = null;
+        //currentTokenElevation = null;
     };
 
     const oldWallsLayerTestWall = WallsLayer.testWall;
@@ -63,20 +63,28 @@ export function Patch_WallCollisions() {
         }
     };
 
-    const oldcheckCollision = WallsLayer.checkCollision;
-    WallsLayer.checkCollision = function (ray) {
-        const result = oldcheckCollision(ray);
-        if(result){
-            currentTokenElevation = this.data.elevation;
-            const collisionArray = WallsLayer.getRayCollisions(ray,true,false,"all",null);
-            collisionArray.forEach(function(element){
-               const {wallHeightTop, wallHeightBottom} = getWallBounds(element.Wall);
+    const oldgetRayCollisions = WallsLayer.getRayCollisions;
+    WallsLayer.getRayCollisions = function (ray, {blockMovement=true, blockSenses=true, mode="all", _performance}={}) {
+        let result=null
+        if(!blockMovement)
+            return oldgetRayCollisions.apply(this,arguments);
+        else
+        {
+            var options= { blockMovement: blockMovement, blockSenses: blockSenses, mode: "all"};
+		const args = [ray, options];
+            result= oldgetRayCollisions.apply(this,args);
+        }
+        if(!blockMovement || !result)
+            return result;
+        if(result && result.length>0){
+            var element;
+            for(var count=0;count<result[0].nodes[0].objects.length;count++) {
+               element=result[0].nodes[0].objects[count]; 
+               const {wallHeightTop, wallHeightBottom} = getWallBounds(element.t);
                if (currentTokenElevation == null || (currentTokenElevation >= wallHeightBottom && currentTokenElevation < wallHeightTop)) {
                    return true;
                }
-            });
-            
-
+            }
         }
         return null;
     }

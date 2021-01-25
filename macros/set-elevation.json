@@ -1,0 +1,18 @@
+{
+    "_id": "ZsCmK9yzV5eIvhHt",
+    "actorIds": [],
+    "author": "M6L6STuBiXTluEz7",
+    "command": "let applyChanges = false;\nnew Dialog({\n  title: `Token Elevation Changer`,\n  content: `\n    <form>\n      <div class=\"form-group\">\n        <label>Elevation Value:</label>\n        <input id=\"token-elevation\" name=\"token-elevation\" type=\"number\" step=\"1\" defaultValue=\"0\"/>\n      </div>\n    </form>\n    `,\n  buttons: {\n    yes: {\n      icon: \"<i class='fas fa-check'></i>\",\n      label: `Apply Changes`,\n      callback: () => applyChanges = true\n    },\n    no: {\n      icon: \"<i class='fas fa-times'></i>\",\n      label: `Cancel Changes`\n    },\n  },\n  default: \"yes\",\n  close: html => {\n    if (applyChanges) {\n      for ( let token of canvas.tokens.controlled ) {\n       let elevation = html.find('[name=\"token-elevation\"]')[0].value || \"0\";\n       token.data.elevation=elevation;\n      }\n    }\n  }\n}).render(true);",
+    "flags": {
+        "furnace": {
+            "runAsGM": false
+        }
+    },
+    "img": "icons/svg/mountain.svg",
+    "name": "Set Elevation",
+    "permission": {
+        "default": 0
+    },
+    "scope": "global",
+    "type": "script"
+}
